@@ -1,4 +1,4 @@
-package io.vertx.tools.eventbus;
+package com.cyngn.vertx.eventbus;
 
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
