@@ -38,6 +38,7 @@ public class PromiseImpl implements Promise {
         evaluated = new AtomicBoolean(false);
     }
 
+    @Override
     public Promise eval(){
         if(actions.size() < 1) {
             throw new IllegalStateException("cannot eval an empty promise");
@@ -51,28 +52,32 @@ public class PromiseImpl implements Promise {
         return this;
     }
 
+    /**
+     * Move the promise chain to the next step in the process.
+     */
     private void internalEval(Void aVoid) {
         if (!done && pos < actions.size() && !failed) {
             PromiseAction action = actions.get(pos);
             pos++;
             try {
                 action.execute(context, (success) -> {
-                    if (failed || done) {
-                        return;
-                    }
+                    if (failed || done) { return; }
 
                     if (!success) {
                         fail();
+                    } else {
+                        done = pos == actions.size();
                     }
 
-                    done = pos == actions.size();
-
+                    // scheduled the next action
                     if (!done && !failed) {
                         vertx.runOnContext(this::internalEval);
                     }
 
-                    if (done && !failed && onComplete != null) {
-                        onComplete.accept(context);
+                    if (done && !failed) {
+                        cleanUp();
+                        // ultimate success case
+                        if(onComplete != null) { onComplete.accept(context); }
                     }
                 });
             } catch (Exception ex) {
@@ -82,12 +87,24 @@ public class PromiseImpl implements Promise {
         }
     }
 
+    /**
+     * End the processing chain due to an error condition
+     */
     private void fail() {
         failed = true;
         done = true;
+        cleanUp();
         if(onFailure != null) {
             onFailure.accept(context);
         }
+    }
+
+    /**
+     * Clear local objects no longer needed
+     */
+    private void cleanUp() {
+        cancelTimer();
+        actions.clear();
     }
 
     @Override
@@ -143,7 +160,21 @@ public class PromiseImpl implements Promise {
         return this;
     }
 
+    /**
+     * Get rid of a timer that has not been fired yet.
+     */
+    private void cancelTimer(){
+        if(timerId != null) {
+            System.out.println("cancelling timer");
+            vertx.cancelTimer(timerId);
+        }
+    }
+
+    /**
+     * Function called when a timer is expired but the chain is not yet complete.
+     */
     private void cancel() {
+        timerId = null;
         if(!done) {
             context.put(CONTEXT_FAILURE_KEY, "promise timed out");
             fail();

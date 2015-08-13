@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Tests for PromisesImpl
@@ -191,6 +192,33 @@ public class PromiseImplTests {
             context.assertTrue(taskContext.getString(Promise.CONTEXT_FAILURE_KEY).indexOf("timed out") != -1);
             async.complete();
         }).eval();
+    }
+
+    @Test
+    public void testTimeoutCancelled(TestContext context) {
+        PromiseFactory factory = new PromiseFactory(vertx);
+
+        Async async = context.async();
+
+        AtomicInteger count = new AtomicInteger(0);
+
+        Promise promise = factory.createSerial((taskContext, onComplete) -> {
+            count.incrementAndGet();
+            onComplete.accept(true);
+        }, (taskContext, onComplete) -> {
+            count.incrementAndGet();
+            onComplete.accept(true);
+        }).done((taskContext) -> count.incrementAndGet())
+        .timeout(200)
+        .except(taskContext -> {
+            context.fail("We should not get here due to timeout");
+        }).eval();
+
+        vertx.setTimer(1000, (timer) -> {
+            context.assertEquals(3, count.get());
+            context.assertTrue(promise.succeeded());
+            async.complete();
+        });
     }
 
     @Test
