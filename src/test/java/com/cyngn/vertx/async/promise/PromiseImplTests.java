@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -240,4 +239,17 @@ public class PromiseImplTests {
             async.complete();
         }).eval();
     }
+
+    @Test
+    public void testIsEmpty(TestContext context) {
+        PromiseFactory factory = new PromiseFactory(vertx);
+        Promise p = factory.create().then((pContext, onResult) -> {});
+
+        context.assertFalse(p.isEmpty());
+
+        Promise p2 = factory.create();
+
+        context.assertTrue(p2.isEmpty());
+    }
+
 }

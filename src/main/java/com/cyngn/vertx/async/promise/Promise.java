@@ -82,6 +82,13 @@ public interface Promise {
     Promise eval();
 
     /**
+     * If the promise has no actions in it
+     *
+     * @return true if the promise has no actions, false otherwise
+     */
+    boolean isEmpty();
+
+    /**
      * Create a new promise.
      * @param vertx the vertx instance to run it on
      * @return the newly created Promise

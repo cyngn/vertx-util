@@ -52,6 +52,11 @@ public class PromiseImpl implements Promise {
         return this;
     }
 
+    @Override
+    public boolean isEmpty() {
+        return actions.size() == 0;
+    }
+
     /**
      * Move the promise chain to the next step in the process.
      */
