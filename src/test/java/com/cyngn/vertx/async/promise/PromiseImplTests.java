@@ -208,12 +208,12 @@ public class PromiseImplTests {
             count.incrementAndGet();
             onComplete.accept(true);
         }).done((taskContext) -> count.incrementAndGet())
-        .timeout(200)
+        .timeout(500)
         .except(taskContext -> {
             context.fail("We should not get here due to timeout");
         }).eval();
 
-        vertx.setTimer(1000, (timer) -> {
+        vertx.setTimer(2000, (timer) -> {
             context.assertEquals(3, count.get());
             context.assertTrue(promise.succeeded());
             async.complete();

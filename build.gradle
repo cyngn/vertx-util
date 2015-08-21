@@ -1,6 +1,6 @@
 apply plugin: 'java'
 // Uncomment below when doing official builds
-//apply from: "gradle/sona.gradle"
+apply from: "gradle/sona.gradle"
 
 version = '0.5.2'
 group = "com.cyngn.vertx"
@@ -23,6 +23,8 @@ repositories {
 dependencies {
     compile 'io.vertx:vertx-core:3.0.0'
     compile 'io.vertx:vertx-web:3.0.0'
+    compile 'org.slf4j:slf4j-api:1.7.7'
+    compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
     testCompile "junit:junit:4.11"
     testCompile "io.vertx:vertx-unit:3.0.0"
 }
