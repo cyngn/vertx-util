@@ -6,6 +6,8 @@ version = '0.5.3'
 group = "com.cyngn.vertx"
 archivesBaseName = "vertx-util"
 
+apply plugin: 'eclipse'
+
 if (!JavaVersion.current().java8Compatible) {
     throw new IllegalStateException('''A Haiku:
                                       |  This needs Java 8,
