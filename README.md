@@ -146,3 +146,43 @@ EventBusTools.oneShotConsumer(bus, "SOME_ADDRESS", event -> {
     System.out.println("Got an event: " + event);
 });
 ```
+
+## Service Client
+Service Client is wrapper over vertx http client. It supports
+
+* Creating http client from Json Configuration.
+* Specification of timeout for apis.
+* In-built retry handler ( coming later)
+
+```json
+{
+  "host" : "localhost",
+  "port" : 8080,
+  "num_connections" : 10,
+  "apis" :[
+    {
+      "name" : "put",
+      "timeout" : 1000
+    },
+    {
+      "name" : "remove",
+      "timeout" : 1000
+    }
+  ]
+}
+```
+
+Field breakdown:
+* `host` server host or endpoint to connect to
+* `port` server port to connect to
+* `num_connections` number of connections in connection pool for Vertx http client
+* `apis` timeouts for apis (extensible to other attributes in future)
+
+Example:
+
+```java
+    ServiceClient.Builder builder = new ServiceClient.Builder(Vertx.vertx);
+        builder.withHost("localhost").withPort(1234);
+        builder.addApiTimeout("api", 1000L);
+        ServiceClient serviceClient = builder.build();
+```

@@ -16,6 +16,8 @@ public class RequestIdResponseHandler implements Handler<RoutingContext> {
 
   /**
    * Get a RequestIdResponseHandler
+   *
+   * @return reference to created handler
    */
   public static RequestIdResponseHandler create() { return new RequestIdResponseHandler(); }
 
