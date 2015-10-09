@@ -2,7 +2,7 @@ apply plugin: 'java'
 // Uncomment below when doing official builds
 //apply from: "gradle/sona.gradle"
 
-version = '0.5.6'
+version = '0.5.7'
 group = "com.cyngn.vertx"
 archivesBaseName = "vertx-util"
 
