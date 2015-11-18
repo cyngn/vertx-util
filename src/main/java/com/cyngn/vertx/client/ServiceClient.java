@@ -33,7 +33,9 @@ public class ServiceClient {
     public static final String COMPRESSION = "compression";
     public static final String APIS = "apis";
     public static final String API_NAME = "name";
-    public static final String API_TIMEOUT = "timeout";
+    public static final String TIMEOUT = "timeout";
+    public static final String SSL = "ssl";
+    public static final String HEADERS = "headers";
     private static final long NO_TIMEOUT = 0L;
 
     // empty request.
@@ -47,6 +49,8 @@ public class ServiceClient {
     // saving host and port for consumers
     private String host;
     private Integer port;
+    private long timeout;
+    private Map<String, String> headers;
 
     // private constructor to prohibit creating instances using constructor
     private ServiceClient() {}
@@ -81,25 +85,49 @@ public class ServiceClient {
             builder.withCompression(config.getBoolean(COMPRESSION));
         }
 
+        if (config.containsKey(TIMEOUT)) {
+            builder.withTimeout(config.getLong(TIMEOUT));
+        }
+
+        if (config.containsKey(SSL)) {
+            builder.withSsl(config.getBoolean(SSL));
+        }
+
+        if (config.containsKey(HEADERS)) {
+            JsonObject headerConfig = config.getJsonObject(HEADERS, null);
+
+            if (headerConfig != null) {
+                Map<String, String> headers = new HashMap<>();
+                headerConfig.forEach(entry -> {
+                    headers.put(entry.getKey(), (String) entry.getValue());
+                });
+                builder.withHeaders(headers);
+            }
+        }
+
         if (config.containsKey(APIS)) {
             JsonArray apiArray = config.getJsonArray(APIS);
 
             for (int pos = 0; pos < apiArray.size(); pos++) {
                 JsonObject apiObject = apiArray.getJsonObject(pos);
                 String name = apiObject.getString(API_NAME);
-                long timeout = apiObject.getLong(API_TIMEOUT, NO_TIMEOUT);
+                long timeout = apiObject.getLong(TIMEOUT, NO_TIMEOUT);
                 builder.addApiTimeout(name, timeout);
             }
         }
 
+
         return builder.build();
     }
 
-    private ServiceClient(HttpClient client, Map<String, Long> apiTimeouts, String host, Integer port) {
+    private ServiceClient(HttpClient client, Map<String, Long> apiTimeouts, String host, Integer port, long timeout,
+              Map<String, String> headers) {
         this.client = client;
         this.apiTimeouts = apiTimeouts;
         this.host = host;
         this.port = port;
+        this.timeout = timeout;
+        this.headers = headers;
     }
 
     /**
@@ -128,8 +156,11 @@ public class ServiceClient {
         private int port = 0;
         private boolean compression = HttpClientOptions.DEFAULT_TRY_USE_COMPRESSION;
         private int numConnections = HttpClientOptions.DEFAULT_MAX_POOL_SIZE;
+        private long timeout = 0L;
         private final Vertx vertx;
-        private Map<String, Long> apiTimeouts= new HashMap<>();
+        private boolean ssl;
+        private Map<String, Long> apiTimeouts = new HashMap<>();
+        private Map<String, String> headers;
 
         public Builder(Vertx vertx) {
             this.vertx = vertx;
@@ -157,11 +188,12 @@ public class ServiceClient {
 
             options.setTryUseCompression(compression);
             options.setMaxPoolSize(numConnections);
+            options.setSsl(ssl);
 
             // create the http client;
             HttpClient client = vertx.createHttpClient(options);
 
-            return new ServiceClient(client, apiTimeouts, host, port);
+            return new ServiceClient(client, apiTimeouts, host, port, timeout, headers);
         }
 
         /**
@@ -209,6 +241,43 @@ public class ServiceClient {
         }
 
         /**
+         * Sets the timeout for all api calls from client.
+         * @param timeout - timeout in milliseconds. timeout with value 0 means no timeout.
+         * @return - reference to Builder object.
+         */
+        public Builder withTimeout(long timeout) {
+            if (timeout < 0L) {
+                throw new IllegalArgumentException("Invalid timeout value: " + timeout);
+            }
+            this.timeout = timeout;
+            return this;
+        }
+
+        /**
+         * Sets the ssl on client.
+         *
+         * Any request to secured http endpoint should have ssl set
+         *
+         * @param ssl - ssl enabled?
+         * @return - reference to Builder object.
+         */
+        public Builder withSsl(boolean ssl) {
+            this.ssl = ssl;
+            return this;
+        }
+
+        /**
+         * Sets the headers to be sent on every api call from client.
+         *
+         * @param headers - map of string key, string value pairs.
+         * @return - reference to Builder object.
+         */
+        public Builder withHeaders(Map<String, String> headers) {
+            this.headers = headers;
+            return this;
+        }
+
+        /**
          * Adds the api to the builder
          *
          * @param name - api name used for subsequent usage to call api.
@@ -217,7 +286,7 @@ public class ServiceClient {
          */
         public Builder addApiTimeout(String name, long timeout) {
             if (timeout < 0L) {
-                throw new IllegalArgumentException("Invalid timeout value");
+                throw new IllegalArgumentException("Invalid timeout value: " + timeout + " for api: " + name);
             }
 
             if (apiTimeouts.containsKey(name)) {
@@ -248,6 +317,44 @@ public class ServiceClient {
                 .write(Buffer.buffer(payload))
                 .setTimeout(timeout);
 
+        if (headers != null && headers.size() > 0) {
+            headers.forEach((key, value) -> request.putHeader(key, value));
+        }
+
+        request.end();
+    }
+
+    /**
+     * Calls the service api
+     *
+     * @param httpMethod       - HTTP method for the request
+     * @param path             - the absolute URI path
+     * @param serviceRequest   - service request object
+     * @param responseHandler  -  response handler
+     * @param exceptionHandler -  exception handler
+     */
+    public void call(HttpMethod httpMethod, String path, ServiceRequest serviceRequest, Handler<HttpClientResponse> responseHandler,
+                     Handler<Throwable> exceptionHandler) {
+
+        HttpClientRequest request = client.request(httpMethod, path, responseHandler)
+                .exceptionHandler(exceptionHandler)
+                .putHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(
+                        serviceRequest.hasPayload() ? serviceRequest.getPayload().length : EMPTY_REQUEST.length()));
+
+
+        if (serviceRequest.hasTimeout()) {
+            request.setTimeout(serviceRequest.getTimeout());
+        }
+
+        if (headers != null && headers.size() > 0) {
+            headers.forEach((key, value) -> request.putHeader(key, value));
+        }
+
+        if (serviceRequest.hasHeaders()) {
+            serviceRequest.getHeaders().forEach((key, value) -> request.putHeader(key, value));
+        }
+
         request.end();
     }
 
@@ -267,6 +374,10 @@ public class ServiceClient {
                 .putHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(payload.length))
                 .write(Buffer.buffer(payload));
+
+        if (headers != null && headers.size() > 0) {
+            headers.forEach((key, value) -> request.putHeader(key, value));
+        }
 
         request.end();
     }
@@ -315,7 +426,7 @@ public class ServiceClient {
     public Long getTimeout(String apiName) {
         Long timeout = apiTimeouts.get(apiName);
 
-        return timeout == null ? 0L : timeout;
+        return timeout == null ? this.timeout : timeout;
     }
 
 }
