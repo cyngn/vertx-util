@@ -30,7 +30,24 @@ public class ServiceClientTest {
     @Test
     public void testGetTimeout() {
         ServiceClient.Builder builder = new ServiceClient.Builder(vertx);
+        builder.withHost("localhost").withPort(1234).withTimeout(10);
+        ServiceClient serviceClient = builder.build();
+        Assert.assertTrue(10L == serviceClient.getTimeout("api"));
+    }
+
+    @Test
+    public void testGetApiTimeout() {
+        ServiceClient.Builder builder = new ServiceClient.Builder(vertx);
         builder.withHost("localhost").withPort(1234);
+        builder.addApiTimeout("api", 1000L);
+        ServiceClient serviceClient = builder.build();
+        Assert.assertTrue(1000L == serviceClient.getTimeout("api"));
+    }
+
+    @Test
+    public void testGetApiTimeoutOverriden() {
+        ServiceClient.Builder builder = new ServiceClient.Builder(vertx);
+        builder.withHost("localhost").withPort(1234).withTimeout(10);
         builder.addApiTimeout("api", 1000L);
         ServiceClient serviceClient = builder.build();
         Assert.assertTrue(1000L == serviceClient.getTimeout("api"));
@@ -45,10 +62,17 @@ public class ServiceClientTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testNegativeTimeout() {
+    public void testNegativeApiTimeout() {
         ServiceClient.Builder builder = new ServiceClient.Builder(vertx);
         builder.withHost("localhost").withPort(1234);
         builder.addApiTimeout("api", -1000L);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNegativeTimeout() {
+        ServiceClient.Builder builder = new ServiceClient.Builder(vertx);
+        builder.withHost("localhost").withPort(1234);
+        builder.withTimeout(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
