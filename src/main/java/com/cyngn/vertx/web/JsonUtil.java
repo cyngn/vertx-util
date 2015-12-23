@@ -37,6 +37,29 @@ public class JsonUtil {
     }
 
     /**
+     * Parses raw json bytes into a concrete impl of your choosing. If there is an error parsing then the
+     * exception is caught and the result will be null.
+     *
+     * @param data  the json raw data
+     * @param clazz the class to parse the json into
+     * @param <T>   the type of class parameterizing this method
+     * @return the new instance object generated from json or null on failure
+     */
+    public static <T> T parseJsonToObject(byte[] data, Class<T> clazz) {
+        if (data == null) {
+            return null;
+        }
+
+        T obj = null;
+        try {
+            obj = mapper.readValue(data, clazz);
+        } catch (IOException e) {
+            logger.error("Error parsing class: {} error: ", clazz, e);
+        }
+        return obj;
+    }
+
+    /**
      * Serializes object to raw json
      *
      * @param object the object to create Json from

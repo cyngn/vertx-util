@@ -41,7 +41,7 @@ public class JsonUtilTest {
 
     @Test
     public void testInvalidJsonDeserialize() {
-        Foo f = JsonUtil.parseJsonToObject(null, Foo.class);
+        Foo f = JsonUtil.parseJsonToObject((String) null, Foo.class);
 
         Assert.assertNull(f);
     }
