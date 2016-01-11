@@ -26,6 +26,7 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.7'
     compile 'commons-lang:commons-lang:2.6'
     compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.6.1"
     testCompile "junit:junit:4.11"
     testCompile "io.vertx:vertx-unit:3.0.0"
     testCompile 'io.vertx:vertx-web:3.0.0:tests'

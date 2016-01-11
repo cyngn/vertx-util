@@ -2,6 +2,7 @@ package com.cyngn.vertx.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,7 @@ import java.io.IOException;
 public class JsonUtil {
     private final static Logger logger = LoggerFactory.getLogger(JsonUtil.class);
 
-    public final static ObjectMapper mapper = new ObjectMapper();
+    public final static ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     /**
      * Parses raw json into a concrete impl of your choosing

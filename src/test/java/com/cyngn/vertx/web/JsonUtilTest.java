@@ -6,6 +6,9 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 /**
  * @author truelove@cyngn.com (Jeremy Truelove) 2/4/15
  */
@@ -78,5 +81,13 @@ public class JsonUtilTest {
     public void testNullJsonDeserializeBytes() {
         Foo f = JsonUtil.parseJsonToObject((byte[])null, Foo.class);
         Assert.assertNull(f);
+    }
+
+    @Test
+    public void testJavaTimeSerialization(){
+        ZonedDateTime zdt = ZonedDateTime.now(ZoneId.of("GMT"));
+        String zdtJson = JsonUtil.getJsonForObject(zdt);
+        ZonedDateTime zdtResurrected = JsonUtil.parseJsonToObject(zdtJson, ZonedDateTime.class);
+        Assert.assertTrue(zdt.compareTo(zdtResurrected) == 0);
     }
 }
