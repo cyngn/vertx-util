@@ -12,9 +12,14 @@ Add a dependency to vertx-util:
 <dependency>
     <groupId>com.cyngn.vertx</groupId>
     <artifactId>vertx-util</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.0</version>
 </dependency>
 ```
+
+| vertx-util | vert.x Version |
+| ------- | --------------:|
+| 3.3.0-SNAPSHOT   | 3.3.0-SNAPSHOT |
+| 0.6.0   | 3.2.0          |
 
 ## Promises
 
